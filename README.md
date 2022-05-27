@@ -43,7 +43,7 @@ csvtk cut -t -H -f 1,3,5,7,9,11,13,15 ictv.taxonomy.tsv \
     > ictv.names.txt
 ```
 
-Use `taxonkit create-taxdump` to create a custom taxdump for ICTV. Next, execute the `fix_taxdump.py` script, which will change the taxids to make them compatible with MMSeqs2:
+Use `taxonkit create-taxdump` to create a custom taxdump for ICTV. Next, execute the `fix_taxdump.py` script, which will make the taxids sequential to make them compatible with MMSeqs2:
 
 ```bash
 taxonkit create-taxdump -K 1 -P 3 -C 5 -O 7 -F 9 -G 11 -S 13 -T 15 \

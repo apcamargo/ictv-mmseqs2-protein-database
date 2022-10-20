@@ -1,6 +1,6 @@
 # ictv-mmseqs2-protein-database
 
-This repository contains instructions to generate a MMSeqs2 protein database with ICTV taxonomy.
+This repository contains instructions to generate a MMSeqs2 protein database with ICTV taxonomy. This database was not benchmarked. For taxonomic assignment of viral genomes you can try [geNomad](https://github.com/apcamargo/genomad).
 
 ## Dependencies:
 

@@ -8,7 +8,7 @@ This repository contains instructions to generate a MMSeqs2 protein database wit
 - [`ripgrep`](https://github.com/BurntSushi/ripgrep)
 - [`csvtk`](https://github.com/shenwei356/csvtk)
 - [`seqkit`](https://github.com/shenwei356/seqkit)
-- [`taxonkit`](https://github.com/shenwei356/taxonkit)
+- [`taxonkit` (version 0.11.1)](https://github.com/shenwei356/taxonkit/releases/tag/v0.11.1)
 - [`taxopy`](https://github.com/apcamargo/taxopy)
 - [`mmseqs2`](https://github.com/soedinglab/MMseqs2)
 

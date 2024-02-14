@@ -17,7 +17,7 @@ This repository contains instructions to generate a MMSeqs2 protein database wit
 First, download the latest VMR release from ICTV and convert it to a tabular file:
 
 ```bash
-aria2c -x 4 -o ictv.xlsx "https://talk.ictvonline.org/taxonomy/vmr/m/vmr-file-repository/13426/download"
+aria2c -x 4 -o ictv.xlsx "https://ictv.global/filebrowser/download/585"
 
 # convert xlsx to tsv
 csvtk xlsx2csv ictv.xlsx \

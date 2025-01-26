@@ -1,126 +1,131 @@
 # ictv-mmseqs2-protein-database
 
-This repository contains instructions to generate a MMSeqs2 protein database with ICTV taxonomy. This database was not benchmarked. For taxonomic assignment of viral genomes you can try [geNomad](https://github.com/apcamargo/genomad).
+This repository provides instructions and scripts for building an MMseqs2 database of virus proteins annotated with taxonomic data. The database can be used to assign sequences to virus taxa as defined by the International Committee on Taxonomy of Viruses (ICTV). A pre-built database is available for download from Zenodo: [doi:10.5281/zenodo.14740915](https://doi.org/10.5281/zenodo.14740915).
 
 ## Dependencies:
 
-- [`aria2`](https://github.com/aria2/aria2)
-- [`ripgrep`](https://github.com/BurntSushi/ripgrep)
-- [`csvtk`](https://github.com/shenwei356/csvtk)
-- [`seqkit`](https://github.com/shenwei356/seqkit)
-- [`taxonkit` (version 0.11.1)](https://github.com/shenwei356/taxonkit/releases/tag/v0.11.1)
-- [`taxopy`](https://github.com/apcamargo/taxopy)
-- [`mmseqs2`](https://github.com/soedinglab/MMseqs2)
-
-## Instructions
-
-First, download the latest VMR release from ICTV and convert it to a tabular file:
+To generate the database on your own, ensure the following dependencies are installed on your system. This repository includes a `pixi.toml` file, which allows you to use [Pixi](https://pixi.sh/) to easily install all required software.
 
 ```bash
-aria2c -x 4 -o ictv.xlsx "https://ictv.global/filebrowser/download/585"
+# Clone the repository
+git clone git@github.com:apcamargo/ictv-mmseqs2-protein-database.git
+cd ictv-mmseqs2-protein-database
+# Install the dependencies and activate the environment
+pixi shell
+```
 
-# convert xlsx to tsv
-csvtk xlsx2csv ictv.xlsx \
+The following tools will be installed:
+
+- [`csvtk`](https://github.com/shenwei356/csvtk)
+- [`mmseqs2`](https://github.com/soedinglab/MMseqs2)
+- [`seqkit`](https://github.com/shenwei356/seqkit)
+- [`taxonkit`](https://github.com/shenwei356/taxonkit)
+- [`taxopy`](https://github.com/apcamargo/taxopy)
+
+## Building the database
+
+### Step 1: Download and process ICTV taxonomy data
+
+Download the ICTV's VMR MSL39 file and convert it to a tabular format:
+
+```bash
+# Download the data
+curl -LJOs https://ictv.global/sites/default/files/VMR/VMR_MSL39.v4_20241106.xlsx
+# Convert the xlsx file to a tsv file that contains taxonomic lineages, one per line
+csvtk xlsx2csv VMR_MSL39.v4_20241106.xlsx \
     | csvtk csv2tab \
     | sed 's/\xc2\xa0/ /g' \
     | csvtk replace -t -F -f "*" -p "^\s+|\s+$" \
-    > ictv.tsv
-
-# choose columns, and remove duplicates
-csvtk cut -t -f "Realm,Subrealm,Kingdom,Subkingdom,Phylum,Subphylum,Class,Subclass,Order,Suborder,Family,Subfamily,Genus,Subgenus,Species" ictv.tsv \
+    | csvtk cut -t -f  "Realm,Subrealm,Kingdom,Subkingdom,Phylum,Subphylum,Class,Subclass,Order,Suborder,Family,Subfamily,Genus,Subgenus,Species" \
     | csvtk uniq -t -f "Realm,Subrealm,Kingdom,Subkingdom,Phylum,Subphylum,Class,Subclass,Order,Suborder,Family,Subfamily,Genus,Subgenus,Species" \
-    | csvtk del-header -t \
-    > ictv.taxonomy.tsv
+    | awk 'NR==1 {$0=tolower($0)} {print}' \
+    > ictv_taxonomy.tsv
 ```
 
-Create a file that will store all the ICTV taxa names:
+Create a file containing all unique ICTV taxon names:
 
 ```bash
-csvtk cut -t -H -f 1,3,5,7,9,11,13,15 ictv.taxonomy.tsv \
+csvtk cut -t -U -f 1,3,5,7,9,11,13,15 ictv_taxonomy.tsv \
     | sed 's/\t/\n/g' \
     | awk '!/^[[:blank:]]*$/' \
     | sort -u \
-    > ictv.names.txt
+    > ictv_names.txt
 ```
 
-Use `taxonkit create-taxdump` to create a custom taxdump for ICTV. Next, execute the `fix_taxdump.py` script, which will make the taxids sequential to make them compatible with MMSeqs2:
+### Step 2: Create a taxdump for the ICTV taxonomy
+
+Generate a taxdump of the ICTV taxonomy using `taxonkit`, then run the `fix_taxdump.py` script to ensure taxids are sequential and compatible with MMseqs2:
 
 ```bash
-taxonkit create-taxdump -K 1 -P 3 -C 5 -O 7 -F 9 -G 11 -S 13 -T 15 \
-    --rank-names "realm","kingdom","phylum","class","order","family","genus","species" \
-    ictv.taxonomy.tsv --out-dir ictv-taxdump
-
-./fix_taxdump.py
+taxonkit create-taxdump ictv_taxonomy.tsv --out-dir ictv_taxdump
+python scripts/fix_taxdump.py
 ```
 
-Download the NCBI taxdump and the `prot.accession2taxid` file. Then, filter `prot.accession2taxid` to keep only viral proteins:
+A pre-built ICTV taxdump is provided in this repository. Simply decompress the `ictv_taxdump.tar.gz` file.
+
+### Step 3: Download and process NCBI NR data
+
+Download the NCBI taxdump and filter the `prot.accession2taxid` file to retain only virus proteins:
 
 ```bash
 # Download the NCBI taxdump
-aria2c -x 4 "ftp://ftp.ncbi.nih.gov/pub/taxonomy/taxdump.tar.gz"
-mkdir ncbi-taxdump
-tar zxfv taxdump.tar.gz -C ncbi-taxdump
+curl -LJOs ftp://ftp.ncbi.nih.gov/pub/taxonomy/taxdump.tar.gz
+mkdir ncbi_taxdump
+tar zxf taxdump.tar.gz -C ncbi_taxdump
 rm taxdump.tar.gz
-
-# Download the protein → taxid association and filter for viruses
-aria2c -x 4 "https://ftp.ncbi.nlm.nih.gov/pub/taxonomy/accession2taxid/prot.accession2taxid.FULL.gz"
-
-gunzip prot.accession2taxid.FULL.gz
-
-awk '{print $2}' prot.accession2taxid.FULL \
-    | sort -u \
-    | taxonkit --data-dir ncbi-taxdump lineage \
-    | rg "\tViruses;" \
-    | awk '{print $1}' \
-    > virus_taxid.list
-
-csvtk grep -t -f 2 -P virus_taxid.list prot.accession2taxid.FULL > virus.accession2taxid
-
-rm prot.accession2taxid.FULL
+# Download the prot.accession2taxid file and filter only virus proteins
+curl -LJs https://ftp.ncbi.nlm.nih.gov/pub/taxonomy/accession2taxid/prot.accession2taxid.FULL.gz \
+    | gzip -dc \
+    | taxonkit lineage -c -i 2 --data-dir ncbi_taxdump \
+    | awk '$4 ~ /^Viruses/' \
+    | awk -v OFS="\t" '{print $1, $3}' \
+    > accession2taxid.tsv
 ```
 
-Execute the `get_ictv_taxids.py` script to create a `accession2taxid` file with ICTV taxids.
+### Step 4: Assign ICTV taxids to virus proteins
+
+Run the `get_ictv_taxids.py `script to assign ICTV taxids to the NR virus proteins:
 
 ```bash
-# Find the ICTV-compliant proteins and write a new table with the ICTV taxids
-./get_ictv_taxids.py
+python scripts/get_ictv_taxids.py
 ```
 
-Download the proteins from NCBI and filter the FASTA file to keep only the proteins associated with ICTV viruses:
+Download and filter the NCBI NR database sequence, retaining only proteins that could be assigned to ICTV taxa:
 
 ```bash
-# Download and filter NR proteins
-aria2c -x 4 "https://ftp.ncbi.nlm.nih.gov/blast/db/FASTA/nr.gz"
-
-# Create a list containing the accessions of the proteins of ICTV viruses
-cut -f 1 virus.accession2taxid.ictv > virus.accession.txt
-
-# Filter the NR proteins to keep the proteins encoded by ICTV viruses
-seqkit grep -j 4 -f virus.accession.txt nr.gz | seqkit seq -i -w 0 -o nr.virus.faa.gz
-
-rm nr.gz
+# Download the NR database and retain only virus proteins
+curl -LJs https://ftp.ncbi.nlm.nih.gov/blast/db/FASTA/nr.gz \
+    | seqkit grep --quiet -j 4 -f <(cut -f 1 accession2taxid_ictv.tsv) \
+    | seqkit seq -i -w 0 \
+    | gzip \
+    > ictv_nr.faa.gz
 ```
 
-There will be proteins in `virus.accession2taxid.ictv` that are not in NR. So we will keep only the proteins that are present in the filtered NR FASTA file:
+Remove proteins from `accession2taxid_ictv.tsv` that are not present in the filtered NR FASTA file:
 
 ```bash
-# Filter the NR virus taxid table
-seqkit fx2tab -n -i nr.virus.faa.gz > nr.virus.list.txt
-csvtk grep -t -H -f 1 -P nr.virus.list.txt virus.accession2taxid.ictv > nr.virus.accession2taxid.ictv
+# Create a tabular file associating the protein accessions with their taxids
+awk 'NR==FNR {ids[$1]; next} $1 in ids' \
+    <(seqkit fx2tab -ni ictv_nr.faa.gz) \
+    accession2taxid_ictv.tsv \
+    > accession2taxid_icvt_nr.tsv
 ```
 
-Using the filtered NR FASTA, the ICTV taxdump, and the `virus.accession2taxid.ictv` tabular file, we will create a MMSeqs2 protein database with taxonomy information:
+### Step 5: Build the MMseqs2 database
+
+Using the filtered NR FASTA, the ICTV taxdump, and the `accession2taxid_icvt_nr.tsv` file, build a MMseqs2 protein database containing ICTV taxonomy data:
 
 ```bash
-# Create the MMSeqs2 database
-mkdir virus_tax_db
-mmseqs createdb --dbtype 1 nr.virus.faa.gz virus_tax_db/virus_tax_db
-mmseqs createtaxdb virus_tax_db/virus_tax_db tmp --ncbi-tax-dump ictv-taxdump --tax-mapping-file nr.virus.accession2taxid.ictv
+mkdir ictv_nr_db
+mmseqs createdb --dbtype 1 ictv_nr.faa.gz ictv_nr_db/ictv_nr_db
+mmseqs createtaxdb ictv_nr_db/ictv_nr_db tmp --ncbi-tax-dump ictv_taxdump --tax-mapping-file accession2taxid_icvt_nr.tsv
 rm -rf tmp
 ```
 
-Finally, to assign taxonomy to viral sequences in an input file (`input.fna`):
+## Using the database for taxonomic assignment
+
+The `ictv_nr_db` MMseqs2 database can be used to assign taxonomic information to virus genomes. For example, to assign taxonomy to a set of genomes stored in a `genomes.fna` FASTA file, use the following command:
 
 ```bash
-mmseqs easy-taxonomy input.fna virus_tax_db/virus_tax_db taxonomy_results tmp -e 1e-5 -s 6 --blacklist "" --tax-lineage 1
+mmseqs easy-taxonomy genomes.fna ictv_nr_db/ictv_nr_db result tmp --blacklist "" --tax-lineage 1
 ```

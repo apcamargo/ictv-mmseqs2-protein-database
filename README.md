@@ -76,6 +76,7 @@ rm taxdump.tar.gz
 # Download the prot.accession2taxid file and filter only virus proteins
 curl -LJs https://ftp.ncbi.nlm.nih.gov/pub/taxonomy/accession2taxid/prot.accession2taxid.FULL.gz \
     | gzip -dc \
+    | awk 'NR > 1 && $2 != 0' \
     | taxonkit lineage -c -i 2 --data-dir ncbi_taxdump \
     | awk '$4 ~ /^Viruses/' \
     | awk -v OFS="\t" '{print $1, $3}' \

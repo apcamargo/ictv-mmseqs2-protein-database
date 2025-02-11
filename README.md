@@ -1,6 +1,6 @@
 # ictv-mmseqs2-protein-database
 
-This repository provides instructions and scripts for building an MMseqs2 database of virus proteins annotated with taxonomic data. The database can be used to assign sequences to virus taxa as defined by the International Committee on Taxonomy of Viruses (ICTV). A pre-built database is available for download from Zenodo: [doi:10.5281/zenodo.14740915](https://doi.org/10.5281/zenodo.14740915).
+This repository provides instructions and scripts for building an MMseqs2 database of virus proteins annotated with taxonomic data. The database can be used to assign sequences to virus taxa as defined by the International Committee on Taxonomy of Viruses (ICTV). A pre-built database is available for download from Zenodo: [doi:10.5281/zenodo.6574913](https://doi.org/10.5281/zenodo.6574913).
 
 ## Dependencies:
 

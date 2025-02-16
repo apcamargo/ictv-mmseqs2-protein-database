@@ -35,4 +35,3 @@ Path("ictv_taxdump").joinpath("names.dmp").unlink()
 Path("ictv_taxdump").joinpath("nodes.dmp").unlink()
 Path("ictv_taxdump").joinpath("nodes.dmp.new").rename("ictv_taxdump/nodes.dmp")
 Path("ictv_taxdump").joinpath("names.dmp.new").rename("ictv_taxdump/names.dmp")
-

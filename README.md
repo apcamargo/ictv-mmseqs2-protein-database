@@ -42,16 +42,6 @@ csvtk xlsx2csv VMR_MSL39.v4_20241106.xlsx \
     > ictv_taxonomy.tsv
 ```
 
-Create a file containing all unique ICTV taxon names:
-
-```bash
-csvtk cut -t -U -f 1,3,5,7,9,11,13,15 ictv_taxonomy.tsv \
-    | sed 's/\t/\n/g' \
-    | awk '!/^[[:blank:]]*$/' \
-    | sort -u \
-    > ictv_names.txt
-```
-
 ### Step 2: Create a taxdump for the ICTV taxonomy
 
 Generate a taxdump of the ICTV taxonomy using `taxonkit`, then run the `fix_taxdump.py` script to ensure taxids are sequential and compatible with MMseqs2:
@@ -61,7 +51,7 @@ taxonkit create-taxdump ictv_taxonomy.tsv --out-dir ictv_taxdump
 python scripts/fix_taxdump.py
 ```
 
-A pre-built ICTV taxdump is provided in this repository. Simply decompress the `ictv_taxdump.tar.gz` file.
+For convenience, this repository includes a pre-built ICTV taxdump. To use it, simply extract the `ictv_taxdump.tar.gz` file instead of generating it from scratch.
 
 ### Step 3: Download and process NCBI NR data
 

@@ -3,8 +3,12 @@
 import taxopy
 
 # Read the official ICTV names
-with open("ictv_names.txt") as fin:
-    ictv_name_set = {i.strip() for i in fin.readlines()}
+ictv_name_set = {
+    name
+    for line in open("ictv_taxonomy.tsv").readlines()[1:]
+    for name in line.strip().split("\t")
+    if name
+}
 
 # Create the Taxopy NCBI and ICTV databases
 ncbi_taxdb = taxopy.TaxDb(

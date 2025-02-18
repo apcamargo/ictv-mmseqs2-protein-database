@@ -31,6 +31,7 @@ Download the ICTV's VMR MSL39 file and convert it to a tabular format:
 ```bash
 # Download the data
 curl -LJOs https://ictv.global/sites/default/files/VMR/VMR_MSL39.v4_20241106.xlsx
+
 # Convert the xlsx file to a tsv file that contains taxonomic lineages, one per line
 csvtk xlsx2csv VMR_MSL39.v4_20241106.xlsx \
     | csvtk csv2tab \
@@ -40,6 +41,14 @@ csvtk xlsx2csv VMR_MSL39.v4_20241106.xlsx \
     | csvtk uniq -t -f "Realm,Subrealm,Kingdom,Subkingdom,Phylum,Subphylum,Class,Subclass,Order,Suborder,Family,Subfamily,Genus,Subgenus,Species" \
     | awk 'NR==1 {$0=tolower($0)} {print}' \
     > ictv_taxonomy.tsv
+
+# Generate a file associating species to virus names
+csvtk xlsx2csv VMR_MSL39.v4_20241106.xlsx \
+    | csvtk csv2tab \
+    | csvtk cut -t -f "Species,Virus name(s)" \
+    | csvtk uniq -t -f "Species,Virus name(s)" \
+    | awk -v FS="\t" 'NR>1 && $2!=""' \
+    > ictv_species_names.tsv
 ```
 
 ### Step 2: Create a taxdump for the ICTV taxonomy

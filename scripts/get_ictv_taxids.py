@@ -2,13 +2,22 @@
 
 import taxopy
 
-# Read the official ICTV names
+# Read the ICTV taxa names
 ictv_name_set = {
     name
     for line in open("ictv_taxonomy.tsv").readlines()[1:]
     for name in line.strip().split("\t")
     if name
 }
+
+# Create a dictionary associating virus names to ICTV species
+virus_name_to_ictv_species = {}
+with open("ictv_species_names.tsv") as fi:
+    for line in fi:
+        ictv_species, virus_names = line.strip().split("\t")
+        for name in virus_names.split(";"):
+            name = name.strip().casefold()
+            virus_name_to_ictv_species[name] = ictv_species
 
 # Create the Taxopy NCBI and ICTV databases
 ncbi_taxdb = taxopy.TaxDb(
@@ -40,6 +49,12 @@ with (
             for j in ncbi_taxon.name_lineage:
                 if j in ictv_name_set:
                     ictv_taxid = taxopy.taxid_from_name(j, ictv_taxdb)[0]
+                    ncbi_to_ictv[ncbi_taxid] = ictv_taxid
+                    break
+                elif j.casefold() in virus_name_to_ictv_species:
+                    ictv_taxid = taxopy.taxid_from_name(
+                        virus_name_to_ictv_species[j.casefold()], ictv_taxdb
+                    )[0]
                     ncbi_to_ictv[ncbi_taxid] = ictv_taxid
                     break
         if ictv_taxid:

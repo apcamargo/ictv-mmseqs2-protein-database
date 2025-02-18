@@ -1,6 +1,12 @@
 #!/usr/bin/env python
 
 import taxopy
+from unidecode import unidecode
+
+
+def normalize_str(s):
+    return unidecode(s).strip().casefold()
+
 
 # Read the ICTV taxa names
 ictv_name_set = {
@@ -12,12 +18,17 @@ ictv_name_set = {
 
 # Create a dictionary associating virus names to ICTV species
 virus_name_to_ictv_species = {}
+ambiguous_names = {"uncultured caudovirales phage", "uncultured virus"}
 with open("ictv_species_names.tsv") as fi:
     for line in fi:
         ictv_species, virus_names = line.strip().split("\t")
         for name in virus_names.split(";"):
-            name = name.strip().casefold()
+            name = normalize_str(name)
+            if name in virus_name_to_ictv_species:
+                ambiguous_names.add(name)
             virus_name_to_ictv_species[name] = ictv_species
+for name in ambiguous_names:
+    virus_name_to_ictv_species.pop(name)
 
 # Create the Taxopy NCBI and ICTV databases
 ncbi_taxdb = taxopy.TaxDb(
@@ -51,9 +62,9 @@ with (
                     ictv_taxid = taxopy.taxid_from_name(j, ictv_taxdb)[0]
                     ncbi_to_ictv[ncbi_taxid] = ictv_taxid
                     break
-                elif j.casefold() in virus_name_to_ictv_species:
+                elif normalize_str(j) in virus_name_to_ictv_species:
                     ictv_taxid = taxopy.taxid_from_name(
-                        virus_name_to_ictv_species[j.casefold()], ictv_taxdb
+                        virus_name_to_ictv_species[normalize_str(j)], ictv_taxdb
                     )[0]
                     ncbi_to_ictv[ncbi_taxid] = ictv_taxid
                     break

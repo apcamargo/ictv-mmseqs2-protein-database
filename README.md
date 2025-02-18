@@ -108,17 +108,17 @@ Remove proteins from `accession2taxid_ictv.tsv` that are not present in the filt
 awk 'NR==FNR {ids[$1]; next} $1 in ids' \
     <(seqkit fx2tab -ni ictv_nr.faa.gz) \
     accession2taxid_ictv.tsv \
-    > accession2taxid_icvt_nr.tsv
+    > accession2taxid_ictv_nr.tsv
 ```
 
 ### Step 5: Build the MMseqs2 database
 
-Using the filtered NR FASTA, the ICTV taxdump, and the `accession2taxid_icvt_nr.tsv` file, build a MMseqs2 protein database containing ICTV taxonomy data:
+Using the filtered NR FASTA, the ICTV taxdump, and the `accession2taxid_ictv_nr.tsv` file, build a MMseqs2 protein database containing ICTV taxonomy data:
 
 ```bash
 mkdir ictv_nr_db
 mmseqs createdb --dbtype 1 ictv_nr.faa.gz ictv_nr_db/ictv_nr_db
-mmseqs createtaxdb ictv_nr_db/ictv_nr_db tmp --ncbi-tax-dump ictv_taxdump --tax-mapping-file accession2taxid_icvt_nr.tsv
+mmseqs createtaxdb ictv_nr_db/ictv_nr_db tmp --ncbi-tax-dump ictv_taxdump --tax-mapping-file accession2taxid_ictv_nr.tsv
 rm -rf tmp
 ```
 

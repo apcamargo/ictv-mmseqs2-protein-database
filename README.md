@@ -129,3 +129,11 @@ The `ictv_nr_db` MMseqs2 database can be used to assign taxonomic information to
 ```bash
 mmseqs easy-taxonomy genomes.fna ictv_nr_db/ictv_nr_db result tmp --blacklist "" --tax-lineage 1
 ```
+
+## Usage in the ICTV Computational Virus Taxonomy Challenge
+
+This database was used to support taxonomic classification for a submission to the [ICTV Computational Virus Taxonomy Challenge](https://ictv-vbeg.github.io/ICTV-TaxonomyChallenge/), a community effort to evaluate computational methods for virus taxonomy assignment. The database version [`VMR_MSL39.v4_20241106`](https://doi.org/10.5281/zenodo.6574913), released on 2025-01-26, served as the reference for the [`ictv-taxonomy-challenge-nr`](https://github.com/apcamargo/ictv-taxonomy-challenge-nr) submission.
+
+## Acknowledgements
+
+@UriNeri and @LanderDC made significant contributions to this repository by developing approaches for systematic retrieval of virus proteins containing taxonomy information.

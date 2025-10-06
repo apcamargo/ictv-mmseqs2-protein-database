@@ -136,4 +136,4 @@ This database was used to support taxonomic classification for a submission to t
 
 ## Acknowledgements
 
-@UriNeri and @LanderDC made significant contributions to this repository by developing approaches for systematic retrieval of virus proteins containing taxonomy information.
+[Uri Neri](https://github.com/UriNeri) and [Lander De Coninck](https://github.com/LanderDC) made significant contributions to this repository by developing approaches for systematic retrieval of virus proteins containing taxonomy information.
